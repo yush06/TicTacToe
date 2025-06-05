@@ -42,7 +42,7 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "yush06"
+          git config user.email "ayushsaxena0612@gmail.com"
           git commit -m "chore: bump version to $NEXT_VERSION after release branch"
           git push origin develop
