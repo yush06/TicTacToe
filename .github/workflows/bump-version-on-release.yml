@@ -1,0 +1,52 @@
+name: Bump version on develop after release
+
+on:
+  create:
+    branches:
+      - 'release/**'
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get release version from branch name
+        id: get_version
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          echo "Release branch: $BRANCH_NAME"
+          CURRENT_VERSION="${BRANCH_NAME//release\//}"
+          echo "Current version: $CURRENT_VERSION"
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+          NEW_MINOR=$((minor + 1))
+          NEXT_VERSION="$major.$NEW_MINOR.0"
+          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+
+      - name: Switch to develop branch
+        run: |
+          git fetch origin develop
+          git checkout develop
+
+      - name: Update package.json version
+        run: |
+          npm version --no-git-tag-version $NEXT_VERSION
+
+      - name: Update env.cicd file
+        run: |
+          sed -i "s/^VERSION=.*/VERSION=$NEXT_VERSION/" env.cicd
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add package.json env.cicd
+          git commit -m "chore: bump version to $NEXT_VERSION after release branch"
+          git push origin develop
